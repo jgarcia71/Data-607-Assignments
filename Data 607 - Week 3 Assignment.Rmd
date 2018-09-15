@@ -1,0 +1,83 @@
+---
+title: "Data 607 - Week 3 Assignment"
+author: "Joseph E. Garcia"
+date: "September 11, 2018"
+output: html_document
+---
+###3)Copy the introductory example. The vector name stores the extrated names.
+```{r}
+library(stringr)
+```
+
+```{r}
+raw.data <- "555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+names<- unlist(str_extract_all(raw.data, "[[:alpha:],. ]{2,}"))
+names
+```
+####Use the tools of this chapter to rearrange the vector so that all elements conform to the standard. (first_name last_name)
+```{r}
+firstNames = unlist(str_extract_all(names, "[.,] [[A-z]]{2,}$|[[A-z]]{2,} "))
+firstNames = unlist(str_extract_all(firstNames, "[[A-z]]{2,}"))
+print (firstNames)
+
+```
+```{r}
+lastNames = unlist(str_extract_all(names, "[^[.,]] [[A-z]]{2,}$|[[A-z]]{2,}, "))
+lastNames = unlist(str_extract_all(lastNames, "[[A-z]]{2,}"))
+print(lastNames)
+```
+
+
+####Construct a logical vector indicating whether a character has a title(i.e., Rev and Dr.)
+```{r}
+titles = unlist(str_extract_all(names, "[[A-z]]{2,}\\."))
+print(titles)
+```
+
+```{r}
+data.frame("Name" = names, "Title Exists" = str_detect(names, titles))
+```
+####Construct a logical vector indicating whether a character has a second name.
+```{r}
+secondNames = unlist(str_extract_all(names, " [[A-z]]{1}\\.? [[A-z]]{1,}\\.?"))
+secondNames = unlist(str_extract_all(secondNames,"[[A-z]]{1}\\.? [[A-z]]{1,}\\.?"))
+print(secondNames)
+```
+
+###4) Describe the types of string that conform to the following regular expressions and construct an example that is matched by the regular expression.
+
+####[0-9]+\\$
+```{r}
+string= c("", "01\\", "0012$", "02020", "738372", "34384782347832", "34")
+str_detect(string, "[0-9]+\\$")
+```
+####\\b[a-z]{1,4}\\b
+```{r}
+string= c("a", "bc", "def", "ghij", "klmno", "02020", "34384782347832", "34")
+str_detect(string, "\\b[a-z]{1,4}\\b")
+```
+####*?\\.txt$
+```{r}
+string= c("a", "bc", "def", "ghij.", "klmn.txt", "*.txt", "pqr874238743.txt", ".txt")
+str_detect(string, ".*?\\.txt$")
+```
+####\\d{2}/\\d{2}/\\d{4}
+```{r}
+string= c("1/1/2016", "02/02/2016", "20/20/0000", "1/1/16", "1/13/293393", "34384782347832", "34")
+str_detect(string, "\\d{2}/\\d{2}/\\d{4}")
+```
+####<(.+?)>.+?</\\l>
+```{r}
+string= c("<html>Hello World</html>", "<html>Hello World<html>", "34384782347832", "34")
+str_detect(string, "<(.+?)>.+?</\\1>")
+```
+###9)The following code hides a secret message. Crack it with R and regular expressions. Hint: Some of the characters are more revealing than others! The code snippet is also available in the materials at www.r-datacollection.com.
+```{r}
+secret_message = "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hprfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPalotfb7wEm24k6t3sR9zqe5fy89n6N5t9kc4fE905gmc4Rgxo5nhDk!gr"
+print(secret_message)
+```
+####Secret message has been revealed 
+```{r}
+paste(unlist(str_extract_all(secret_message, "[:upper:]|[:punct:]")), collapse = "")
+```
+
