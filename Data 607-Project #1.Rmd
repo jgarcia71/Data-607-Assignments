@@ -1,0 +1,108 @@
+---
+title: 'Data 607-Project #1'
+author: "Joseph E. Garcia"
+date: "September 20, 2018"
+output: html_document
+---
+```{r}
+library(stringr)
+library(ggplot2)
+```
+
+```{r}
+player_names="tournamentinfo.txt"
+data=readLines(player_names)
+data[1:22]
+```
+
+```{r}
+line_vector<-str_detect(data,"\\-----")
+chess_data<-data[!line_vector]
+chess_data<-chess_data[3:length(chess_data)]
+chess_data<-str_split(chess_data,"\\|")
+ext_data<-str_extract_all(chess_data,"[[:alpha:]-?[:alpha:]  ?]{2,}")
+names_loc<-str_detect(unlist(ext_data),"[[:alpha:]]{3,}")
+names<-unlist(ext_data)[names_loc]
+head(names)
+```
+
+```{r}
+state_loc<-str_detect(unlist(ext_data),"[[:alpha:]]{2}")
+state<-unlist(ext_data)[(state_loc)&(!names_loc)]
+head(state)
+```
+
+```{r}
+num_data<-str_extract_all(chess_data,"\\d{1,}+\\.?.?")
+pt_loc<-str_detect(unlist(num_data),"\\d\\.\\d")
+Points<-unlist(num_data)[(pt_loc)]
+head(Points)
+```
+
+```{r}
+rtg_data<-str_extract_all(chess_data,"(( \\:)|(\\>))?.?\\d{1,}P*\\.?")
+pre_loc<-str_detect(unlist(rtg_data),"\\b\\d{3,4}P?\\b")
+post_loc<-str_detect(unlist(rtg_data),"\\>.?\\b\\d{3,4}P?\\b")
+pre_rating<-unlist(rtg_data)[(pre_loc)&(!post_loc)]
+pre_rating<-str_replace_all(pre_rating,"P","")
+post_rating<-unlist(rtg_data)[post_loc]
+post_rating<-str_replace_all(post_rating,"([>P])","")
+head(pre_rating)
+head(post_rating)
+```
+
+```{r}
+head(post_rating)
+```
+
+```{r}
+game_data<-str_extract_all(chess_data,"[WDL]...\\d{1,2}")
+game_data<-str_extract_all(game_data,"\\.?\\d{1,2}")
+game_data<-str_replace_all(game_data,"\\b[0]\\b",".")
+gm_zl<-str_detect(game_data,fixed("."))
+game_data<-game_data[!(gm_zl)]
+head(game_data)
+```
+
+
+```{r}
+Position<-seq(1,64,by=1)
+Player_names<-str_trim(names,"both")
+State<-str_trim(state,"both")
+pre_rating<-str_trim(pre_rating,"both")
+post_rating<-str_trim(post_rating,"both")
+playerranks<-cbind(Position,Player_names,State,Points,pre_rating,post_rating)
+playerranks<-as.data.frame(playerranks)
+#numeric data are stored as factors, convert to numeric
+playerranks$pts<-as.numeric(as.character(playerranks$Points))
+playerranks$pre_rating<-as.numeric(as.character(playerranks$pre_rating))
+playerranks$post_rating<-as.numeric(as.character(playerranks$post_rating))
+head(playerranks)
+```
+
+```{r}
+#calculate the mean of opponent rankings
+result<-array(0,dim=nrow(playerranks))
+#loop through all the players
+for (i in 1:nrow(playerranks)){ 
+  #extract opponent data and query rankings
+  match_res<-as.numeric(str_split(unlist(str_extract_all(game_data[i],"\\d{1,2}"))," "))
+  #calcuate the average of opponent rankings
+result[i]<-mean(playerranks[match_res,colnames(playerranks)=="pre_rating"])
+};
+
+playerranks$avg_rating<-result
+head(playerranks)
+```
+
+
+```{r}
+ggplot(playerranks,aes(avg_rating,pts))+geom_point(size=3)+xlab("Average Opponent Rating")+ylab("Total Points")+ggtitle("Chess Players and Opponents")
+```
+
+
+```{r}
+write.csv(playerranks,"playerrank_clean",row.names=FALSE)
+```
+
+
