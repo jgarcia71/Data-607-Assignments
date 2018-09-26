@@ -1,0 +1,72 @@
+---
+title: "Data 607 - Week 5 Assignment"
+author: "Joseph E. Garcia"
+date: "September 25, 2018"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+```
+
+```{r}
+
+airlinesdata<-read.csv("Data607-Week5 Assignment.csv",header=TRUE,sep=",")
+
+head(airlinesdata)
+```
+
+```{r}
+selectdata<-airlinesdata %>%  
+  filter(!is.na(Phoenix)) %>% 
+    rename("Los Angeles"=Los.Angeles,"San Diego"=San.Diego,"San Francisco"=San.Francisco)
+
+selectdata$Airlines<-as.character(selectdata$Airlines)
+selectdata$Airlines[selectdata$Airlines==""]<-c("ALASKA","AM WEST")
+
+selectdata
+```
+
+```{r}
+
+```{r}
+tidydata<-selectdata %>% 
+  gather(key=Cities,value=Number,3:7)
+tidydata<-arrange(tidydata,Airlines,Arrival)
+head(tidydata)
+```
+
+```{r}
+tidydata %>% 
+  group_by(Airlines,Arrival) %>% 
+  summarize(Total=sum(Number))
+```
+
+```{r}
+tidydata %>% 
+  group_by(Airlines) %>% 
+  summarize(Total=sum(Number))
+```
+
+
+
+
+```{r}
+ggplotly(ggplot(filter(tidydata,Arrival=="Delayed"),aes(Cities,Number,color=Airlines))+geom_point(size=5)+ggtitle("Delayed Flights")+ylab("Number of Delayed"))
+```
+
+```{r}
+spreadata<-tidydata %>% 
+  spread(Arrival,Number) %>% 
+  mutate(Total=Delayed+`On time`,prop=Delayed/Total)
+```
+
+
+
+```{r}
+ggplotly(ggplot(spreadata,aes(x=Cities,y=prop))+geom_bar(aes(fill=Airlines),stat="identity",position="dodge", colour="#D55E00")+ylab("Proportion of Delayed")+ggtitle("Delayed Flights"))
+```
+
