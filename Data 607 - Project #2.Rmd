@@ -1,0 +1,135 @@
+---
+title: 'Data 607 - Project #2'
+author: "Joseph E. Garcia"
+date: "October 1, 2018"
+output: html_document
+---
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+1.- Dataset (New York City Leading Causes of Death)
+```{r}
+
+data_nyc_deaths <- read.csv("New_York_City_Leading_Causes_of_Death.csv",header = TRUE, stringsAsFactors = FALSE)
+head(data_nyc_deaths)
+```
+
+```{r}
+gender<- data_nyc_deaths %>%
+  distinct %>%
+  group_by(Year, Sex, Cause.of.Death) %>%
+  tally(Count, sort=TRUE) %>%
+  top_n(1, n) %>%
+  arrange(Year)
+```
+
+```{r}
+gender
+```
+
+```{r}
+ethnic<- data_nyc_deaths %>%
+  distinct %>%
+  group_by(Year, Ethnicity, Cause.of.Death) %>%
+  tally(Count, sort=TRUE) %>%
+  top_n(1, n)
+```
+
+```{r}
+ethnic
+```
+
+```{r}
+cause<- data_nyc_deaths %>%
+  distinct %>%
+  filter(Year == 2010 | Year == 2011) %>%
+  group_by(Year, Cause.of.Death) %>%
+  tally(Count) %>%
+  spread(Year, n) %>%
+  mutate(years= ((`2011` - `2010`) / `2010`) * 100)
+
+maj_death <- arrange(cause, desc(years))
+min_death <- arrange(cause, years)
+```
+
+```{r}
+head(maj_death)
+```
+
+```{r}
+head(min_death)
+```
+
+
+2.- Dataset (Shark Attack)
+```{r}
+shark_data<- "https://raw.githubusercontent.com/jgarcia71/Data-607-Assignments/master/Shark%20attacks.csv"
+shark.data <- read.csv(shark_data, stringsAsFactors = F)
+str(shark.data)
+```
+
+```{r}
+tail(shark.data)
+```
+
+```{r}
+shark.data <- shark.data %>% 
+  filter(!(Case.Number %in% c("", NA, 0, "xx"))) %>% 
+  select(-Case.Number.1) %>% 
+  select(-Case.Number.2)
+```
+
+
+```{r}
+a <- shark.data %>% 
+  filter(Year >= 1900 & Year < 2017) %>% 
+  group_by(Year) %>% 
+  summarise(Attacks = n())
+plot(a, type = "l")
+```
+
+
+3.- Dataset (World Population)
+
+```{r}
+World_Population <- read.csv("https://raw.githubusercontent.com/jgarcia71/Data-607-Assignments/master/World%20Population%20Data.csv", header=T, stringsAsFactors = F, skip=4)
+
+View(World_Population)
+
+WorldPopulation_selct <- select(World_Population, c(1,2,9,19,29,39,49,59))
+
+names(WorldPopulation_selct )[1]<-paste("Country_Name")
+names(WorldPopulation_selct )[2]<-paste("Country_Code")
+
+
+WorldPopulation_selct_income <- filter(WorldPopulation_selct, grepl('income', Country_Name))
+WorldPopulation_selct_income <- filter(WorldPopulation_selct_income, grepl('Low|High|Middle|low|high|middle', Country_Name))
+WorldPopulation_selct_income <- filter(WorldPopulation_selct_income, !grepl('Middle East|OECD', Country_Name))
+WorldPopulation_selct_income <- filter(WorldPopulation_selct_income, !grepl('&', Country_Name))
+WorldPopulation_selct_tidy <- WorldPopulation_selct_income %>% gather("Year", "Population", 3:8)
+WorldPopulation_selct_tidy %>% arrange(Country_Name,Year,Population) 
+```
+
+```{r}
+ggplot(WorldPopulation_selct_tidy, aes(x=Country_Name, y=Population, colour = Year, group = Year)) + geom_line(linetype="solid", color="blue", size=1) + geom_point(shape = 22, size = 3, fill = "yellow") + ggtitle("World Population") + labs(x="Income", y="Population")
+```
+
+```{r}
+WorldPopulation_selct_country <- filter(WorldPopulation_selct, !grepl('income', Country_Name))
+WorldPopulation_selct_country <- filter(WorldPopulation_selct_country, !grepl('develop|debt|OECD|Fragile|classi|Other|World|Euro|Baltic', Country_Name))
+WorldPopulation_selct_country <- filter(WorldPopulation_selct_country, !grepl('SAS|NAC', Country_Code))
+WorldPopulation_selct_country <- arrange(WorldPopulation_selct_country, -X2014)
+WorldPopulation_selct_count10 <- head(WorldPopulation_selct_country,10)
+WorldPopulation_selct_count10_td <- WorldPopulation_selct_count10 %>% gather("Year", "Population", 3:8)
+WorldPopulation_selct_count10_td <- arrange(WorldPopulation_selct_count10_td, Country_Name, Year, Population)
+```
+
+
+
+```{r}
+ggplot(WorldPopulation_selct_count10_td, aes(x=Country_Name, y=Population, colour = Year, group = Year)) +  coord_flip() + geom_bar(stat="identity",position="dodge",fill="lightblue") + ggtitle("World Population Country") + labs(x="Country", y="Population")
+
+```
