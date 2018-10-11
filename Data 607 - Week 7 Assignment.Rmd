@@ -1,0 +1,42 @@
+---
+title: "Data 607 - Week 7 Assignment"
+author: "Joseph E. Garcia"
+date: "October 10, 2018"
+output: html_document
+---
+
+```{r}
+library(XML)
+library(rjson)
+library(plyr)
+```
+
+##Read from Html File
+```{r}
+
+file_html<- "C:/Users/JGARCIA/Desktop/books.html"
+html<- readHTMLTable(file_html)
+htmldataframe<- data.frame(html, stringsAsFactors = FALSE)
+names(htmldataframe)<- gsub("NULL.", "", names(htmldataframe))
+htmldataframe<- rename(htmldataframe, c("QR.Code" = "QR Code"))
+print(htmldataframe)
+```
+
+##Read from XML File
+```{r}
+file_xml<- "C:/Users/JGARCIA/Desktop/books.xml"
+xmldataframe <- xmlToDataFrame(file_xml, stringsAsFactors = FALSE)
+print(xmldataframe)
+```
+
+##Read from json file
+```{r}
+file_json<- "C:/Users/JGARCIA/Desktop/books.json"
+json<- fromJSON(file = file_json)
+jsondataframe <- as.data.frame(json, stringsAsFactors = FALSE)
+jsondataframe<- rename(jsondataframe, c("QR.Code" = "QR Code"))
+print(jsondataframe)
+```
+
+##Conclusion
+The three files looks quite identical. The html data frame is the largest sizes followed by the the xml data frame and json data frame is the smallest in size.
