@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<books>
+
+    <book ID="001">
+    <Title>Elements of Statistical Learning</Title>
+    <Authors>Trevor Hastie, Robert Tibshirani, Jerome Friedman</Authors>
+    <Subject>Machine Learning</Subject>
+    <Publisher>Springer</Publisher>
+    <Year>2009</Year>
+  
+  </book>
+
+   <book ID="002">
+    <Title>Studies in Ethnomethodology</Title>
+    <Authors>Harold Garfinkel</Authors>
+    <Subject>Sociology</Subject>
+    <Publisher>Prentice-Hall</Publisher>
+    <Year>1967</Year>
+ </book>
+ 
+    <book ID="003">
+    <Title>R for Data Science</Title>
+    <Authors>Hadley Wickham</Authors>
+    <Subject>Data Science</Subject>
+    <Publisher>Oreilly</Publisher>
+    <Year>2016</Year>
+  </book>  
+
+ </books>
