@@ -1,0 +1,120 @@
+---
+title: 'Data 607 - Project #4'
+author: "Joseph E. Garcia"
+date: "November 1, 2018"
+output: html_document
+---
+```{r}
+library(RTextTools)
+library(tm)
+library(wordcloud)
+library(e1071)
+library(corpus)
+```
+
+
+```{r}
+ham_dir="C:/Users/JGARCIA/Desktop/MS in Data Science/Data 607/Assignments/Project #4/easy_ham/"
+hamFileNames = list.files(ham_dir)
+
+# Documents spam and ham
+ham_docs<- NA
+for(i in 1:length(hamFileNames))
+{
+  filepath<-paste0(ham_dir, "/", hamFileNames[1])  
+  text <-readLines(filepath)
+  list1<- list(paste(text, collapse="\n"))
+  ham_docs= c(ham_docs,list1)
+  
+}
+
+ham_df <-as.data.frame(unlist(ham_docs),stringsAsFactors = FALSE)
+ham_df$type <- "ham"
+colnames(ham_df) <- c("text","type")
+spam_dir="C:/Users/JGARCIA/Desktop/MS in Data Science/Data 607/Assignments/Project #4/spam/"
+spamFileNames = list.files(spam_dir)
+
+spam_docs <- NA
+for(i in 1:length(spamFileNames))
+{
+  filepath<-paste0(spam_dir, "/", spamFileNames[1])  
+  text <-readLines(filepath)
+  list1<- list(paste(text, collapse="\n"))
+  spam_docs = c(spam_docs,list1)
+  
+}
+
+spam_df <-as.data.frame(unlist(spam_docs),stringsAsFactors = FALSE)
+spam_df$type <- "spam"
+colnames(spam_df) <- c("text","type")
+spam_ham_df <- rbind(ham_df, spam_df)
+
+```
+
+```{r}
+emailCorpus <- Corpus(VectorSource(spam_ham_df$text))
+cleanCorpus <- tm_map(emailCorpus, removeNumbers)
+cleanCorpus <- tm_map(cleanCorpus, removePunctuation)
+cleanCorpus <- tm_map(cleanCorpus, removeWords, stopwords())
+cleanCorpus <- tm_map(cleanCorpus, stripWhitespace)
+```
+
+```{r}
+email_dtm <- DocumentTermMatrix(cleanCorpus)
+spam_indices <- which(spam_ham_df$type == "spam")
+suppressWarnings(wordcloud(cleanCorpus[spam_indices], min.freq=30))
+```
+
+
+```{r}
+ham_indices <- which(spam_ham_df$type == "ham")
+suppressWarnings(wordcloud(cleanCorpus[ham_indices], min.freq=60))
+```
+
+```{r}
+sample <- floor(0.85 * nrow(spam_ham_df))
+set.seed(123)
+train_indices <- sample(seq_len(nrow(spam_ham_df)), size = sample)
+
+train_spam_ham <- spam_ham_df[train_indices, ]
+test_spam_ham <- spam_ham_df[-train_indices, ]
+spam<-subset(train_spam_ham,train_spam_ham$type == "spam")
+ham<-subset(train_spam_ham,train_spam_ham$type == "ham")
+
+train_email<- Corpus(VectorSource(train_spam_ham$text))
+test_email <- Corpus(VectorSource(test_spam_ham$text))
+
+train_clean <- tm_map(train_email,removeNumbers)
+test_clean <- tm_map(test_email, removeNumbers)
+
+train_clean <- tm_map(train_clean, removePunctuation)
+test_clean <- tm_map(test_clean, removePunctuation)
+
+train_clean <- tm_map(train_clean, removeWords, stopwords())
+test_clean  <- tm_map(test_clean, removeWords, stopwords())
+
+train_clean<- tm_map(train_clean, stripWhitespace)
+test_clean<- tm_map(test_clean, stripWhitespace)
+
+train_email_dtm <- DocumentTermMatrix(train_clean)
+test_email_dtm <- DocumentTermMatrix(test_clean)
+
+convert_count <- function(x) {
+  y <- ifelse(x > 0, 1,0)
+  y <- factor(y, levels=c(0,1), labels=c("No", "Yes"))
+  y
+}
+
+train_sms <- apply(train_email_dtm, 2, convert_count)
+test_sms <- apply(test_email_dtm, 2, convert_count)
+
+# classification of email
+classification_email<- naiveBayes(train_sms, factor(train_spam_ham$type))
+```
+
+```{r}
+test<- predict(classification_email, newdata=test_sms)
+
+table(test, test_spam_ham$type)
+```
+
