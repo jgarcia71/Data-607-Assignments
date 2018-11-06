@@ -1,0 +1,16 @@
+---
+title: "Data 607- Week 11 Discussion"
+author: "Joseph E. Garcia"
+date: "November 6, 2018"
+output: html_document
+---
+####Scenario Design analysis and Reverse engineering:
+The following site <a href="https://www.kohls.com/">Kohls</a> which I make purchase usually like to recommend me about other items that will like to purchase beside thia also include sponsored links and comments of the product that you are goimg to purchase. By doing this make the business to increase their revenue a make the customer to purchase more items.The main objective that I believe is that goal of the reatiler store "KOHL'S" is to recommends and be aware of the cost of other retailers
+<div id>> <img src="kohls.JPG" alt=""></div>
+
+
+#### Improvements
+
+The recommendation is to make the free home delivery because even the store has Kiosk machine, where you can purchase without getting a charge when it's send to home but those machine doesn't work properly to make the customer purchase more conformtable.
+
+
