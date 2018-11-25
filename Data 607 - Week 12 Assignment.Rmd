@@ -1,0 +1,87 @@
+---
+title: "Data 607 - Week 12 Assignment"
+author: "Joseph E. Garcia"
+date: "November 19, 2018"
+output: html_document
+---
+```{r}
+library(odbc)
+library(dplyr)
+library(dbplyr)
+
+```
+
+## We pulling the data down from mySQL:
+```{r}
+db <- DBI::dbConnect(odbc::odbc(), "SQL")
+```
+
+```{r}
+movie <- as.data.frame(db %>% tbl("movie"))
+movie
+```
+
+
+```{r}
+rating <- as.data.frame(db %>% tbl("rating"))
+rating
+```
+
+
+```{r}
+merge(movie,rating, by = c('movie_id'), all.x=TRUE)
+
+```
+
+
+Loading Data Into MongoDB
+
+##Now to load the data into a MongoDB. First we need a connection:
+```{r}
+library(mongolite)
+mdb_movie = mongo(collection = "movie", db = "movie")
+```
+
+```{r}
+library(mongolite)
+mdb_rating = mongo(collection = "rating", db = "rating")
+```
+
+
+##Now we can load the collection name movie into the MongoDB.
+```{r}
+mdb_movie$insert(movie)
+```
+
+
+```{r}
+mdb_rating$insert(rating)
+```
+
+## Now we run a print out of the database to make sure the data was uploaded.
+```{r}
+alldata_movie <- mdb_movie$find('{}')
+head(alldata_movie)
+```
+
+
+```{r}
+alldata_rating <- mdb_rating$find('{}')
+head(alldata_rating)
+```
+
+```{r}
+
+merge(head(alldata_movie),head(alldata_rating), by = c('movie_id'), all=TRUE)
+```
+
+######The migration from MySQL to MongoDB is complete.
+
+
+##Advantages and Disadvantages of storing the data in a relational database vs. your NoSQL database.
+
+
+######Advantages of using a relational database: is that you can reduce data integrity and eliminate a lot of anomolies.
+
+######Disadvantages of NoSQL:store is easier to retrieve and the data access is faster as the data but need to consider YOUR use case more clearly before you commit to much to a system.
+
