@@ -1,0 +1,247 @@
+---
+title: "Data 607 - Final Project"
+author: "Joseph E. Garcia"
+date: "December 4, 2014"
+output: html_document
+---
+```{r}
+library('tidyverse')
+library('data.table')
+library('dplyr')
+library('ggplot2')
+library('reshape2')
+library('scales')
+library('rmarkdown')
+library('rvest')
+```
+Energy usage changes our lives like technology does the demand of getting better energy and more efficient has change during the last 25 years. The hope is to get renewable energy and better solution for energy conservation and consumption.
+
+Goals:
+
+-To find global energy usage, energy trading flows and per capital use to better understand the progress for energy efficiency usage.
+
+-We will observe energy consuming by category, and find what new strategy for renewable energy conservation.
+
+-To discover which countries are energy suppliers / consumer, what relationship they bound together.
+
+![ ](C:/Users/JGARCIA/Desktop/Renewable-Energy.jpg)
+![ ](C:/Users/JGARCIA/Desktop/renewable-and-non-renewable-resources-4-638.jpg)
+
+```{r}
+data<-fread('C:/Users/JGARCIA/Desktop/MS in Data Science/Data 607/Project/Final Project/all_energy_statistics.csv')
+head(data)
+```
+
+```{r}
+
+allEnergy<-data[,-6] 
+
+allEnergy$commodity_transaction<-gsub(".*-", "", allEnergy$commodity_transaction) 
+
+names(allEnergy)[names(allEnergy) == 'commodity_transaction'] <- 'transaction' 
+
+allEnergy$transaction <- tolower(allEnergy$transaction)
+
+allEnergy$quantity<-as.integer(allEnergy$quantity)
+```
+
+```{r}
+#The top ten countries 
+subEnergy<- allEnergy[allEnergy$COUNTRY %in% c("United States","China","Japan","Germany","United Kingdom","India","France","Brazil","Italy","Canada"), ]
+
+#The products that of consume like Coal_Peat_Oil, Oil, Nautal_Gas, Electricity_heat and Biofuels_Waste 
+energy<-fread('C:/Users/JGARCIA/Desktop/MS in Data Science/Data 607/Project/Final Project/energy.csv')
+head(energy)
+```
+
+```{r}
+Coal_Peat_Oil<-energy[,1]
+Oil<-energy[,2]
+Nautal_Gas<-energy[,3]
+Electricity_heat<-energy[,4]
+Biofuels_Waste<-energy[,5]
+
+CPO<-left_join(Coal_Peat_Oil,subEnergy, by = c("Coal_Peat_Oil"="category"))
+OIL<-left_join(Oil,subEnergy,by = c("Oil"="category"))
+NG<-left_join(Nautal_Gas, subEnergy,by = c("Nautal Gas"="category"))
+EH<-left_join(Electricity_heat,subEnergy, by = c("Electricity & heat"="category"))
+BW<-left_join(Biofuels_Waste,subEnergy, by = c("Biofuels & Waste"="category"))
+
+
+impCPO<-CPO[grepl("imports",CPO[,3])==TRUE,]
+impOIL<-OIL[grepl("imports",OIL[,3])==TRUE,]
+impNG<-NG[grepl("imports",NG[,3])==TRUE,]
+impBW<-BW[grepl("imports",BW[,3])==TRUE,]
+
+expCPO<-CPO[grepl("exports",CPO[,3])==TRUE,]
+expOIL<-OIL[grepl("exports",OIL[,3])==TRUE,]
+expNG<-NG[grepl("exports",NG[,3])==TRUE,]
+expBW<-BW[grepl("exports",BW[,3])==TRUE,]
+```
+
+
+Import & Export Net Trades of Countries by different types products of Oil:
+
+Coal Peat Oil Net Trade
+```{r}
+impCPO.country<-impCPO %>% group_by(COUNTRY,YEAR) %>% summarise(totalImport=sum(quantity)) 
+expCPO.country<-expCPO %>% group_by(COUNTRY,YEAR) %>% summarise(totalExport=sum(quantity)) 
+netCPO<-merge(impCPO.country,expCPO.country, c("COUNTRY","YEAR"))
+netCPO<-mutate(netCPO,netTransation=totalExport - totalImport)
+```
+
+```{r}
+ggplot(data=netCPO, aes(x=YEAR, y=netTransation, group = COUNTRY, colour = COUNTRY)) +
+    geom_line() +
+    geom_point( size=1, shape=15, fill="white")+
+    ggtitle("Total Coal_Peat_Oil net trade (Export-Import), Metric tons,thousand") +
+    scale_y_continuous(labels = comma)
+```
+
+
+Oil net trade
+```{r}
+impOIL.country<-impOIL %>% group_by(COUNTRY,YEAR) %>% summarise(totalImport=sum(quantity)) 
+expOIL.country<-expOIL %>% group_by(COUNTRY,YEAR) %>% summarise(totalExport=sum(quantity)) 
+netOIL<-merge(impOIL.country,expOIL.country, c("COUNTRY","YEAR"))
+netOIL<-mutate(netOIL,netTransation=totalExport - totalImport)
+```
+
+```{r}
+ggplot(data=netOIL, aes(x=YEAR, y=netTransation, group = COUNTRY, colour = COUNTRY)) +
+    geom_line() +
+    geom_point( size=1, shape=15, fill="white")+
+    ggtitle("Total Oil net trade (Export-Import)")+
+    scale_y_continuous(labels = comma)
+```
+
+
+Natural Gas net trade
+```{r}
+impNG.country<-impNG %>% group_by(COUNTRY,YEAR) %>% summarise(totalImport=sum(quantity)) 
+expNG.country<-expNG %>% group_by(COUNTRY,YEAR) %>% summarise(totalExport=sum(quantity)) 
+netNG<-merge(impNG.country,expNG.country, c("COUNTRY","YEAR"))
+netNG<-mutate(netNG,netTransation=totalExport - totalImport)
+
+```
+
+```{r}
+ggplot(data=netNG, aes(x=YEAR, y=netTransation, group = COUNTRY, colour = COUNTRY)) +
+    geom_line() +
+    geom_point( size=1, shape=15, fill="white")+
+    ggtitle("Total Natural Gas net trade (Export-Import)")+
+    scale_y_continuous(labels = comma)
+```
+
+
+
+Biofuels & Waste net trade (Export-Import)
+```{r}
+impBW.country<-impBW %>% group_by(unit,COUNTRY,YEAR) %>% summarise(totalImport=sum(quantity)) 
+expBW.country<-expBW %>% group_by(unit,COUNTRY,YEAR) %>% summarise(totalExport=sum(quantity)) 
+netBW<-merge(impBW.country,expBW.country, c("COUNTRY","YEAR","unit"))
+netBW<-mutate(netBW,netTransation=totalExport - totalImport)
+
+ggplot(data=netBW, aes(x=YEAR, y=netTransation, group = COUNTRY, colour = COUNTRY)) +
+    geom_line() +
+    geom_point( size=1, shape=15, fill="white")+
+    ggtitle("Total Biofuels & Waste net trade (Export-Import)")+
+    facet_grid(. ~ unit) +theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_y_continuous(labels = comma)
+```
+
+
+
+Electricity Consumption by Countries and Households
+```{r}
+electricity1990<-subEnergy %>% filter(YEAR=="1990") %>% filter(category=="total_electricity") 
+electricity1990<-electricity1990[grepl("households",electricity1990[,2])==TRUE,]
+electricity1990<-electricity1990[order(electricity1990$quantity,decreasing = TRUE),]
+electricity1990<-electricity1990[order(electricity1990$quantity,decreasing = TRUE),]
+
+electricity2014<-subEnergy %>% filter(YEAR=="2014") %>% filter(category=="total_electricity") 
+electricity2014<-electricity2014[grepl("households",electricity2014[,2])==TRUE,]
+electricity2014<-electricity2014[order(electricity2014$quantity,decreasing = TRUE),]
+electricity2014<-electricity2014[order(electricity2014$quantity,decreasing = TRUE),]
+
+e<-merge(electricity2014,electricity1990, c("COUNTRY"))
+e<-data.frame(e$COUNTRY,e$quantity.x,e$quantity.y,e$unit.x,e$transaction.x)
+colnames(e)<- c("COUNTRY","2014_quantity","1990_quantity","unit","transation")
+
+#add new column "growth rate"
+e["1990-2014growth"] <-round((e$`2014_quantity`-e$`1990_quantity`)/e$`1990_quantity`,2)
+
+e<-e[order(e$`2014_quantity`,decreasing = TRUE),]
+
+e
+```
+
+Growth rate by Household 1990-2014
+
+```{r}
+ggplot(data=e, aes(x=reorder(COUNTRY, -`1990-2014growth`), y=`1990-2014growth`,fill=COUNTRY)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=`1990-2014growth`), vjust=-1, color="black", size=3)+  
+  ggtitle("Electricity Consumption") +
+  xlab("COUNTRY") + ylab("Growth Rate")
+```
+
+
+Usage of electricty by houselholds in different country:
+
+```{r}
+url<-("https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population")
+temp <- url %>% 
+  html %>%
+  html_nodes("table")
+population<-html_table(temp[1])
+
+
+population<-data.frame(population)
+
+ 
+colnames(population)[2] <- "Country"
+
+
+population$Country <-gsub("\\[.*","",population$Country)
+
+
+population$Population<-gsub("[^0-9]", "", population$Population) 
+population$Population<-as.integer(as.character(population$Population))
+
+population_data<- population[population$Country %in% c("China","Japan","Germany","India","France","Brazil","Italy","Canada"), ]
+
+population_data<-data.frame(population_data$Country,population_data$Population)
+
+colnames(population_data) <- c("COUNTRY","Population")
+
+p<-merge(electricity2014,population_data, c("COUNTRY"))
+
+
+p["Per_Capital_KW_hr"] <-round(p$quantity/p$Population*1000000,2)
+
+p<-p[order(p$quantity,decreasing = TRUE),]
+
+```
+
+```{r}
+ggplot(data=p, aes(x=reorder(COUNTRY, Per_Capital_KW_hr), y=Per_Capital_KW_hr,fill=COUNTRY)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=Per_Capital_KW_hr), vjust=-1, color="black", size=3)+  
+  ggtitle("Electricity Consumption by Households") +
+  xlab("COUNTRY") + ylab("Use-Kilowatt-hours")+
+  coord_flip()
+```
+
+References:
+
+https://www.google.com/search?q=renewable+energy&tbm=isch&source=lnms&sa=X&ved=0ahUKEwiijpXzs6DfAhXDm-AKHalLA8QQ_AUICygC&biw=1366&bih=657&dpr=1#imgrc=EsZPKxXPz3eGVM:
+
+https://www.google.com/search?biw=1366&bih=608&tbm=isch&sa=1&ei=ejMUXM3rLJDK_QbFxJcQ&q=advantages+and+disadvantages+of+renewable+energy&oq=adrenewable+energy&gs_l=img.1.1.0i7i30l10.148534.148732..151667...0.0..0.151.207.1j1......0....1..gws-wiz-img.4-GwLg71oCI#imgrc=VzQWehjiTCIUjM:
+
+https://www.kaggle.com/unitednations/international-energy-statistics/data
+
+https://www.investopedia.com/articles/investing/022415/worlds-top-10-economies.asp
+
+http://api.eia.gov/series/?api_key=YOUR_API_KEY_HERE&series_id=ELEC.GEN.ALL-US-98.A
+
